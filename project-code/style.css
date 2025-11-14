@@ -151,62 +151,67 @@ button {
 }
 
 .notifications {
-  padding: 2rem;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
+  padding: 1.5rem;
+  margin-bottom: 90px; /* space above navbar */
 }
 
 .notification-card {
-  background: white;
-  border-radius: 15px;
+  background: #ffffff;
   display: flex;
   align-items: center;
-  gap: 1rem;
   padding: 1rem;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  transition: transform 0.2s;
+  margin-bottom: 1rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(176, 132, 247, 0.18);
+  border: 1px solid #eee;
+  transition: transform 0.18s ease, box-shadow 0.25s ease;
+  cursor: pointer;
 }
 
 .notification-card:hover {
-  transform: scale(1.01);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 16px rgba(176, 132, 247, 0.25);
 }
 
 .notification-card img {
-  width: 55px;
-  height: 55px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   object-fit: cover;
-}
-
-.notification-text {
-  flex: 1;
+  margin-right: 1rem;
+  border: 3px solid #e6d7ff;
 }
 
 .notification-text h4 {
   margin: 0;
-  color: #2e2a36;
+  font-size: 1.1rem;
+  font-weight: 600;
 }
 
 .notification-text p {
-  margin: 0.2rem 0 0;
-  color: #666;
+  margin: 0.3rem 0 0;
+  color: #6a6a6a;
   font-size: 0.9rem;
 }
 
 .message-btn {
-  background-color: #b084f7;
+  width: 150px;
+  margin-left: auto;
+  padding: 0.5rem 1.1rem;
+  background: #b084f7;
   color: white;
   border: none;
-  border-radius: 12px;
-  padding: 0.5rem 1rem;
+  border-radius: 10px;
   cursor: pointer;
+  font-size: 0.9rem;
   font-weight: 600;
+  transition: background 0.3s ease, transform 0.2s ease;
 }
 
 .message-btn:hover {
-  background-color: #a371f5;
+  background: #a371f5;
 }
+
 
 .chat-container {
   display: flex;
@@ -345,7 +350,7 @@ button {
 .fab {
   position: fixed;
   bottom: 90px;
-  left: 20px; /* 👈 moved to bottom-left */
+  left: 20px;
   width: 60px;
   height: 60px;
   background: #b084f7;
@@ -364,4 +369,3 @@ button {
   background: #a371f5;
   transform: scale(1.1);
 }
-
