@@ -17,9 +17,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $action = $_POST['action'];
         
         if ($action === 'accept') {
+            $get_sender = $conn->prepare("SELECT sender_id FROM connection_requests WHERE id = ? AND receiver_id = ?");
+            $get_sender->bind_param("ii", $request_id, $user_id);
+            $get_sender->execute();
+            $get_sender->bind_result($sender_id);
+            $get_sender->fetch();
+            $get_sender->close();
+
             $stmt = $conn->prepare("UPDATE connection_requests SET status = 'accepted' WHERE id = ? AND receiver_id = ?");
             $stmt->bind_param("ii", $request_id, $user_id);
             $stmt->execute();
+
+            $notif = $conn->prepare("
+                INSERT INTO notifications (user_id, sender_id, type, reference_id, created_at)
+                VALUES (?, ?, 'request_accepted', ?, NOW())
+            ");
+            $notif->bind_param("iii", $sender_id, $user_id, $request_id);
+            $notif->execute();
+            $notif->close();
         } elseif ($action === 'decline') {
             $stmt = $conn->prepare("UPDATE connection_requests SET status = 'declined' WHERE id = ? AND receiver_id = ?");
             $stmt->bind_param("ii", $request_id, $user_id);
@@ -139,7 +154,7 @@ $suggested_users = $suggested_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
   <div class="navbar">
     <a href="home.php"><i class="fa-solid fa-house"></i> Home</a>
     <a href="messages.php"><i class="fa-regular fa-message"></i> Messages</a>
-    <a href="notifications.html"><i class="fa-regular fa-bell"></i> Notifications</a>
+    <a href="notifications.php"><i class="fa-regular fa-bell"></i> Notifications</a>
     <a href="profile.php"><i class="fa-regular fa-user"></i> Profile</a>
     <a href="logout.php"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
   </div>
