@@ -1,0 +1,162 @@
+.requests-section,
+.notifications {
+  padding: 1.5rem;
+  margin-bottom: 80px; /* leaves room for navbar */
+}
+
+h2 {
+  margin-bottom: 1rem;
+  font-size: 1.4rem;
+  color: #2e2a36;
+}
+
+.no-requests,
+.no-activity {
+  background: #fff;
+  padding: 1rem;
+  border-radius: 15px;
+  text-align: center;
+  color: #777;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+
+.requests-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.request-card {
+  background: #fff;
+  border-radius: 15px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  transition: transform 0.2s ease;
+}
+
+.request-card:hover {
+  transform: scale(1.01);
+}
+
+.request-card img {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #b084f7;
+}
+
+.request-info h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.request-info p {
+  margin: 0.2rem 0;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.request-actions {
+  margin-top: 0.5rem;
+  display: flex;
+  gap: 0.6rem;
+}
+
+.accept-btn,
+.decline-btn {
+  padding: 0.45rem 0.9rem;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  transition: 0.3s ease;
+}
+
+.accept-btn {
+  background: #62c462;
+  color: #fff;
+}
+
+.accept-btn:hover {
+  background: #55b455;
+}
+
+.decline-btn {
+  background: #e25555;
+  color: #fff;
+}
+
+.decline-btn:hover {
+  background: #d44343;
+}
+
+.notifications .notification-card {
+  background: #fff;
+  border-radius: 15px;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  transition: 0.2s ease;
+}
+
+.notification-card:hover {
+  transform: scale(1.01);
+}
+
+.notification-card img {
+  width: 55px;
+  height: 55px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #b084f7;
+}
+
+.notification-text h4 {
+  margin: 0;
+  font-size: 1.05rem;
+  color: #2e2a36;
+  font-weight: 600;
+}
+
+.notification-text p {
+  margin: 0.3rem 0 0.2rem;
+  font-size: 0.9rem;
+  color: #666;
+}
+
+.timestamp {
+  font-size: 0.75rem;
+  color: #999;
+  display: block;
+  margin-top: 0.3rem;
+}
+
+.btn-small {
+  padding: 0.35rem 0.7rem;
+  background: #b084f7;
+  color: #fff;
+  border-radius: 8px;
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: 0.3s;
+  display: inline-block;
+  margin-top: 0.3rem;
+}
+
+.btn-small:hover {
+  background: #a371f5;
+}

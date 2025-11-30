@@ -151,7 +151,7 @@ if (isset($_GET['user_id'])) {
   <div class="navbar">
     <a href="home.php"><i class="fa-solid fa-house"></i> Home</a>
     <a href="messages.php"><i class="fa-regular fa-message"></i> Messages</a>
-    <a href="notifications.html"><i class="fa-regular fa-bell"></i> Notifications</a>
+    <a href="notifications.php"><i class="fa-regular fa-bell"></i> Notifications</a>
     <a href="profile.php"><i class="fa-regular fa-user"></i> Profile</a>
     <a href="logout.php"><i class="fa-solid fa-right-from-bracket"></i> Logout</a>
   </div>
