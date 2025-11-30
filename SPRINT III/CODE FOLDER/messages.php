@@ -200,14 +200,28 @@ if (isset($_GET['user_id'])) {
 
   <script>
     const chatMessages = document.getElementById('chat-messages');
-    if (chatMessages) {
-      chatMessages.scrollTop = chatMessages.scrollHeight;
+
+    function scrollToBottom() {
+        if (chatMessages) {
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
     }
-    setInterval(() => {
-      <?php if ($selected_user): ?>
-        chatMessages.innerHTML = <?php loadMessages($conn, $user_id, $selected_user['id']) ?>;
-      <?php endif; ?>
-    }, 5000);
+
+    <?php if ($selected_user): ?>
+      function refreshMessages() {
+          fetch("load_messages.php?user_id=<?php echo $selected_user['id']; ?>")
+              .then(result => result.text())
+              .then(html => {
+                  chatMessages.innerHTML = html;
+                  scrollToBottom();
+              });
+      }
+
+      scrollToBottom();
+
+      // Refresh every 5 seconds
+      setInterval(refreshMessages, 5000);
+    <?php endif; ?>
   </script>
 </body>
 </html>
