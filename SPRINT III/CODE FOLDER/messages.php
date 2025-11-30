@@ -7,84 +7,131 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-$user_id = $_SESSION['user_id'];
+$user_id = (int) $_SESSION['user_id'];
 
-// Fetch connected users (accepted connections)
-$stmt = $conn->prepare("
-    SELECT u.id, u.name, u.profile_picture 
-    FROM datingAppUsers u 
-    WHERE u.id IN (
-        SELECT sender_id FROM connection_requests 
-        WHERE receiver_id = ? AND status = 'accepted'
-        UNION
-        SELECT receiver_id FROM connection_requests 
-        WHERE sender_id = ? AND status = 'accepted'
-    )
-");
-$stmt->bind_param("ii", $user_id, $user_id);
-$stmt->execute();
-$connected_users = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+function getConnectedUsers($conn, $user_id) : array {
+    $sql = "
+        SELECT u.id, u.name, u.profile_picture 
+        FROM datingAppUsers u 
+        WHERE u.id IN (
+            SELECT sender_id FROM connection_requests 
+            WHERE receiver_id = ? AND status = 'accepted'
+            UNION
+            SELECT receiver_id FROM connection_requests 
+            WHERE sender_id = ? AND status = 'accepted'
+        )
+    ";
 
-// Handle message sending
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['receiver_id']) && isset($_POST['message'])) {
-    $receiver_id = $_POST['receiver_id'];
-    $message = trim($_POST['message']);
-    
-    // Check if users are connected
-    $check_stmt = $conn->prepare("
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ii", $user_id, $user_id);
+    $stmt->execute();
+    return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+}
+
+function usersAreConnected($conn, $u1, $u2) : bool {
+    $sql = "
         SELECT id FROM connection_requests 
-        WHERE ((sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?)) 
+        WHERE ((sender_id = ? AND receiver_id = ?) OR (sender_id = ? AND receiver_id = ?))
         AND status = 'accepted'
-    ");
-    $check_stmt->bind_param("iiii", $user_id, $receiver_id, $receiver_id, $user_id);
-    $check_stmt->execute();
-    
-    if ($check_stmt->get_result()->num_rows > 0 && !empty($message)) {
-        $insert_stmt = $conn->prepare("INSERT INTO messages (sender_id, receiver_id, message) VALUES (?, ?, ?)");
-        $insert_stmt->bind_param("iis", $user_id, $receiver_id, $message);
-        $insert_stmt->execute();
+    ";
+
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("iiii", $u1, $u2, $u2, $u1);
+    $stmt->execute();
+    return $stmt->get_result()->num_rows > 0;
+}
+
+function sendMessage($conn, $sender_id, $receiver_id, $message) : bool {
+    $sql = "INSERT INTO messages (sender_id, receiver_id, message) VALUES (?, ?, ?)";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("iis", $sender_id, $receiver_id, $message);
+    return $stmt->execute();
+}
+
+function getUserById($conn, $id) : array {
+    $stmt = $conn->prepare("SELECT id, name, profile_picture FROM datingAppUsers WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    return $stmt->get_result()->fetch_assoc();
+}
+
+function getMessages($conn, $u1, $u2) : array {
+    $sql = "
+        SELECT m.*, u.name AS sender_name 
+        FROM messages m
+        JOIN datingAppUsers u ON m.sender_id = u.id
+        WHERE (m.sender_id = ? AND m.receiver_id = ?) 
+        OR (m.sender_id = ? AND m.receiver_id = ?)
+        ORDER BY m.created_at ASC
+    ";
+
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("iiii", $u1, $u2, $u2, $u1);
+    $stmt->execute();
+    return $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
+}
+
+function markAsRead($conn, $receiver_id, $sender_id) : bool {
+    $sql = "UPDATE messages SET is_read = TRUE 
+            WHERE receiver_id = ? AND sender_id = ?";
+    $stmt = $conn->prepare($sql);
+
+    if (!$stmt) {
+        die("Prepare failed (markAsRead): " . $conn->error);
     }
-    
-    header("Location: messages.php?user_id=" . $receiver_id);
+
+    $stmt->bind_param("ii", $receiver_id, $sender_id);
+    return $stmt->execute();
+}
+
+function loadMessages($conn, $user_id, $selected_id) : void {
+  $messages = getMessages($conn, $user_id, $selected_id);
+  foreach ($messages as $msg) {
+    $is_sender = $msg['sender_id'] == $user_id;
+    $msg_class = $is_sender ? 'sent' : 'received';
+    echo "<div class='bubble {$msg_class}'>
+            <p>" . htmlspecialchars($msg['message']) . "</p>
+            <small> " . date('h:i', strtotime($msg['created_at'])) . "</small>
+          </div>";
+  }
+}
+
+// Load connected users
+$connected_users = getConnectedUsers($conn, $user_id);
+
+// Handle sending messages
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['receiver_id'], $_POST['message'])) {
+    $receiver = (int) $_POST['receiver_id'];
+    $message  = trim($_POST['message']);
+
+    if (!empty($message) && usersAreConnected($conn, $user_id, $receiver)) {
+        sendMessage($conn, $user_id, $receiver, $message);
+    }
+
+    header("Location: messages.php?user_id=" . $receiver);
     exit();
 }
 
-// Fetch messages with selected user
+// Load selected chat + messages
 $selected_user = null;
 $messages = [];
+
 if (isset($_GET['user_id'])) {
-    $selected_user_id = $_GET['user_id'];
-    
-    // Get selected user info
-    $user_stmt = $conn->prepare("SELECT id, name, profile_picture FROM datingAppUsers WHERE id = ?");
-    $user_stmt->bind_param("i", $selected_user_id);
-    $user_stmt->execute();
-    $selected_user = $user_stmt->get_result()->fetch_assoc();
-    
-    // Get messages between current user and selected user
-    $msg_stmt = $conn->prepare("
-        SELECT m.*, u.name as sender_name 
-        FROM messages m 
-        JOIN datingAppUsers u ON m.sender_id = u.id 
-        WHERE (m.sender_id = ? AND m.receiver_id = ?) 
-        OR (m.sender_id = ? AND m.receiver_id = ?) 
-        ORDER BY m.created_at ASC
-    ");
-    $msg_stmt->bind_param("iiii", $user_id, $selected_user_id, $selected_user_id, $user_id);
-    $msg_stmt->execute();
-    $messages = $msg_stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-    
-    // Mark messages as read
-    $update_stmt = $conn->prepare("UPDATE messages SET is_read = TRUE WHERE receiver_id = ? AND sender_id = ?");
-    $update_stmt->bind_param("ii", $user_id, $selected_user_id);
-    $update_stmt->execute();
+    $selected_id = (int) $_GET['user_id'];
+
+    $selected_user = getUserById($conn, $selected_id);
+    $messages = getMessages($conn, $user_id, $selected_id);
+
+    // Mark unread as read
+    markAsRead($conn, $user_id, $selected_id);
 }
+
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8">
   <title>SparX | Messages</title>
   <link rel="stylesheet" href="style.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
@@ -125,12 +172,7 @@ if (isset($_GET['user_id'])) {
         </div>
         
         <div class="chat-messages" id="chat-messages">
-          <?php foreach ($messages as $message): ?>
-            <div class="bubble <?php echo $message['sender_id'] == $user_id ? 'sent' : 'received'; ?>">
-              <p><?php echo htmlspecialchars($message['message']); ?></p>
-              <small><?php echo date('h:i A', strtotime($message['created_at'])); ?></small>
-            </div>
-          <?php endforeach; ?>
+          <?php loadMessages($conn, $user_id, $selected_user['id']); ?>
         </div>
         
         <form method="POST" class="chat-input">
@@ -148,7 +190,7 @@ if (isset($_GET['user_id'])) {
     </div>
   </div>
 
-  <div class="navbar">
+  <div class="navbar" style="position: sticky;">
     <a href="home.php"><i class="fa-solid fa-house"></i> Home</a>
     <a href="messages.php"><i class="fa-regular fa-message"></i> Messages</a>
     <a href="notifications.html"><i class="fa-regular fa-bell"></i> Notifications</a>
@@ -161,6 +203,11 @@ if (isset($_GET['user_id'])) {
     if (chatMessages) {
       chatMessages.scrollTop = chatMessages.scrollHeight;
     }
+    setInterval(() => {
+      <?php if ($selected_user): ?>
+        chatMessages.innerHTML = <?php loadMessages($conn, $user_id, $selected_user['id']) ?>;
+      <?php endif; ?>
+    }, 5000);
   </script>
 </body>
 </html>
